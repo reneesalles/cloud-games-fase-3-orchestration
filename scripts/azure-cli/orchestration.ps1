@@ -38,14 +38,17 @@ $workspaceName="log-$suffix-$env"
 # ---------------------------------------------------------------------
 # 0. Registrar os namespaces necessários (às vezes dá erro de "Resource provider not found" se não tiver)
 # ---------------------------------------------------------------------
-# Garante que o namespace do Key Vault está registrado (às vezes dá erro de "Resource provider not found" se não tiver)
+# Garante que o namespace do Key Vault está registrado
 az provider register --namespace Microsoft.KeyVault
 
-# Garante que o namespace do Log Analytics está registrado (às vezes dá erro de "Resource provider not found" se não tiver)
+# Garante que o namespace do Log Analytics está registrado
 az feature register --name AIWorkspacePreview --namespace microsoft.insights
 az provider register --namespace microsoft.insights
 
-# Garante que o namespace do Cosmos DB está registrado (às vezes dá erro de "Resource provider not found" se não tiver)
+# Garante que o namespace do Alerts Management está registrado
+az provider register --namespace Microsoft.AlertsManagement
+
+# Garante que o namespace do Cosmos DB está registrado
 az provider register --namespace Microsoft.DocumentDB
 
 Write-Output "Iniciando provisionamento da infraestrutura para o ambiente: $env"
