@@ -3,6 +3,9 @@
 # ---------------------------------------------------------------------
 
 $location = "cloud-games-fase-3-catalog"
+# $location = "cloud-games-fase-3-notifications"
+# $location = "cloud-games-fase-3-payments"
+# $location = "cloud-games-fase-3-users"
 
 if (!(Test-Path -Path $location)) {
     Write-Output "Caminho '$location' não encontrado..."
