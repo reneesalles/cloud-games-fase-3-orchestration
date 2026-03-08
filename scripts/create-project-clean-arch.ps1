@@ -21,6 +21,11 @@ try {
     # Criar a estrutura de projetos
     # ---------------------------------------------------------------------
 
+    # 1. Criar os arquivos de configuração pro projeto
+    dotnet new globaljson --sdk-version 10.0.102
+    dotnet new editorconfig
+    dotnet new gitignore
+    
     # 2. Criar a Solução com o nome padrão
     dotnet new sln -n Fiap.CloudGames
     
