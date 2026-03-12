@@ -34,6 +34,7 @@ $cosmosName="cosmos-$suffix-$env"
 $sqlServerName="sql-$suffix-$env"
 $appInsightsName="appi-$suffix-$env"
 $workspaceName="log-$suffix-$env"
+$cosmosName="cosmos-$suffix-$env"
 
 # ---------------------------------------------------------------------
 # 0. Registrar os namespaces necessários (às vezes dá erro de "Resource provider not found" se não tiver)
@@ -54,7 +55,7 @@ az provider register --namespace Microsoft.DocumentDB
 Write-Output "Iniciando provisionamento da infraestrutura para o ambiente: $env"
 
 # ---------------------------------------------------------------------
-# 1. Resource Group e Key Vault
+# 1. Resource Group, Key Vault e Storage Account
 # ---------------------------------------------------------------------
 # Cria o Resource Group
 Write-Output "Criando Resource Group: $rg"
@@ -73,6 +74,17 @@ az role assignment create --role "Key Vault Secrets Officer" --assignee-object-i
 
 Write-Host "Aguardando 60 segundos para o Azure propagar a permissão globalmente..."
 Start-Sleep -Seconds 60 # Pausa obrigatória para o RBAC funcionar
+
+# Cria a Storage Account (necessária para o Application Insights e para o Azure Functions)
+$sufixo = Get-Random -Minimum 1000 -Maximum 9999
+$storageName = "stacccloudgames$sufixo"
+Write-Output "Criando Storage Account: $storageName"
+az storage account create -n $storageName -g $rg -l $location --sku Standard_LRS
+
+# Salva a Connection String da Storage Account no Key Vault
+Write-Output "Salvando Connection String da Storage Account no Key Vault"
+$connectionString=$(az storage account show-connection-string -n $storageName -g $rg --query connectionString -o tsv)
+az keyvault secret set --vault-name $kvName -n "StorageAccountConnection" --value "$connectionString"
 
 # ---------------------------------------------------------------------
 # 2. Observabilidade
@@ -105,7 +117,14 @@ az keyvault secret set --vault-name $kvName -n "ServiceBusConnection" --value "$
 # ---------------------------------------------------------------------
 Write-Output "Criando Cosmos DB Account: $cosmosName"
 az cosmosdb create -g $rg -n $cosmosName --capabilities EnableServerless --default-consistency-level Session --locations regionName=$location failoverPriority=0 isZoneRedundant=False
-az cosmosdb sql database create -g $rg --account-name $cosmosName --name "AuditLogs"
+
+Write-Output "Criando banco de dados no Cosmos DB: $cosmosDbName"
+az cosmosdb sql database create -g $rg --account-name $cosmosName --name $cosmosDbName
+az keyvault secret set --vault-name $kvName -n "CosmosDbName" --value "$cosmosDbName"
+
+Write-Output "Criando container no Cosmos DB: $cosmosContainerName com partition key $cosmosPartitionKey"
+az cosmosdb sql container create -g $rg --account-name $cosmosName --database-name $cosmosDbName --name $cosmosContainerName --partition-key-path $cosmosPartitionKey
+az keyvault secret set --vault-name $kvName -n "CosmosDbContainer" --value "$cosmosContainerName"
 
 Write-Output "Salvando Connection String do Cosmos DB no Key Vault"
 $cosmosKey=$(az cosmosdb keys list -g $rg -n $cosmosName --type keys --query primaryMasterKey -o tsv)
