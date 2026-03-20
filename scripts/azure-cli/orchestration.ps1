@@ -35,6 +35,37 @@ $sqlServerName="sql-$suffix-$env"
 $appInsightsName="appi-$suffix-$env"
 $workspaceName="log-$suffix-$env"
 $cosmosName="cosmos-$suffix-$env"
+$serviceBusTopology = @{
+    "integration-events" = @{
+        "audit-log-subscription" = @("*")
+    }
+    "user-events" = @{
+        "catalog-subscription" = @(
+            "user-updated"
+        )
+        "notification-subscription" = @(
+            "user-registered", "user-email-confirmed", "user-password-reset-requested", "user-password-reseted", "user-invited", "user-account-activated", "user-updated", "user-deleted", "user-restored"
+        )
+    }
+    "catalog-events" = @{
+        "payment-subscription" = @(
+            "order-created", "order-cancelation-requested", "order-refund-requested"
+        )
+        "notification-subscription" = @(
+            "game-recommendations-generated", "promotion-recommendations-generated", 
+            "order-paid", "order-canceled", "order-refunded", "order-failed",
+            "games-added-to-user-library", "games-removed-from-user-library"
+        )
+    }
+    "payment-events" = @{
+        "catalog-subscription" = @(
+            "payment-succeeded", "payment-failed", "cancelation-succeeded", "cancelation-failed", "refund-succeeded", "refund-failed"
+        )
+        "notification-subscription" = @(
+            "payment-link-generated"
+        )
+    }
+}
 
 # ---------------------------------------------------------------------
 # 0. Registrar os namespaces necessários (às vezes dá erro de "Resource provider not found" se não tiver)
@@ -111,6 +142,47 @@ az servicebus namespace create -g $rg -n $sbName --location $location --sku Stan
 Write-Output "Salvando Connection String do Service Bus no Key Vault"
 $sbKey=$(az servicebus namespace authorization-rule keys list -g $rg --namespace-name $sbName -n RootManageSharedAccessKey --query primaryConnectionString -o tsv)
 az keyvault secret set --vault-name $kvName -n "ServiceBusConnection" --value "$sbKey"
+
+Write-Output "Criando Tópicos e Assinaturas no Service Bus com base na topologia definida..."
+foreach ($topic in $serviceBusTopology.GetEnumerator()) {
+    $topicName = $topic.Name
+    $subscriptions = $topic.Value
+
+    Write-Output "Criando Tópico: $topicName"
+    az servicebus topic create -g $rg --namespace-name $sbName -n $topicName
+
+    foreach ($sub in $subscriptions.GetEnumerator()) {
+        $subName = $sub.Name
+        $eventsList = $sub.Value
+
+        Write-Output " -> Criando Assinatura: $subName"
+        az servicebus topic subscription create -g $rg --namespace-name $sbName --topic-name $topicName -n $subName
+
+        # Lógica de Filtro SQL
+        if ($eventsList -contains "*") {
+            Write-Output "    -> Regra curinga detectada. Mantendo filtro `$Default (1=1)."
+        } else {
+            # Converte o array do PowerShell ("a", "b") para formato SQL ('a', 'b')
+            $sqlFormattedValues = ($eventsList | ForEach-Object { "'$_'" }) -join ", "
+            $sqlExpression = "EventType IN ($sqlFormattedValues)"
+            $ruleName = "Filtro-$subName"
+
+            Write-Output "    -> Aplicando filtro SQL: $sqlExpression"
+            
+            # Cria a regra restritiva com o filtro SQL (que só deixa passar os eventos listados)
+            az servicebus topic subscription rule create `
+                -g $rg --namespace-name $sbName --topic-name $topicName --subscription-name $subName `
+                --name $ruleName `
+                --filter-sql-expression $sqlExpression 
+
+            # Remove a regra padrão que deixaria passar todos os eventos
+            Write-Output "    -> Removendo regra `$Default"
+            az servicebus topic subscription rule delete `
+                -g $rg --namespace-name $sbName --topic-name $topicName --subscription-name $subName `
+                --name "`$Default"
+        }
+    }
+}
 
 # ---------------------------------------------------------------------
 # 4. Cosmos DB (Serverless)
