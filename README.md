@@ -10,11 +10,11 @@ Como provedor de nuvem, utilizamos a Microsoft Azure, aproveitando serviços com
 
 |Projeto|Tipo|Repositório|Responsabilidade|
 |---|---|---|---|
-|Users|API|[cloud-games-fase-3-users](https://github.com/FIAP-10NETT-Grupo-30/cloud-games-fase-3-users)|Gerenciamento de usuários, autenticação e autorização.|
-|Catalog|API|[cloud-games-fase-3-catalog](https://github.com/FIAP-10NETT-Grupo-30/cloud-games-fase-3-catalog)|Gerenciamento do catálogo de jogos, promoções, biblioteca e carrinho do usuário, e checkout.|
-|Notifications|Azure Functions|[cloud-games-fase-3-notifications](https://github.com/FIAP-10NETT-Grupo-30/cloud-games-fase-3-notifications)|Gerenciamento de notificações para os usuários, como promoções, atualizações de jogos, cadastro do usuário, status dos pedidos.|
-|Payments|Azure Functions|[cloud-games-fase-3-payments](https://github.com/FIAP-10NETT-Grupo-30/cloud-games-fase-3-payments)|Gerenciamento de pagamentos, integração com gateways de pagamento, processamento de transações e status dos pedidos.|
-|Audit|Azure Functions|[cloud-games-fase-3-audit](https://github.com/FIAP-10NETT-Grupo-30/cloud-games-fase-3-audit)|Gerenciamento de auditoria, registro de eventos e atividades do sistema para monitoramento e análise.|
+|Users|API|[cloud-games-fase-3-users](https://github.com/reneesalles/cloud-games-fase-3-users)|Gerenciamento de usuários, autenticação e autorização.|
+|Catalog|API|[cloud-games-fase-3-catalog](https://github.com/reneesalles/cloud-games-fase-3-catalog)|Gerenciamento do catálogo de jogos, promoções, biblioteca e carrinho do usuário, e checkout.|
+|Notifications|Azure Functions|[cloud-games-fase-3-notifications](https://github.com/reneesalles/cloud-games-fase-3-notifications)|Gerenciamento de notificações para os usuários, como promoções, atualizações de jogos, cadastro do usuário, status dos pedidos.|
+|Payments|Azure Functions|[cloud-games-fase-3-payments](https://github.com/reneesalles/cloud-games-fase-3-payments)|Gerenciamento de pagamentos, integração com gateways de pagamento, processamento de transações e status dos pedidos.|
+|Audit|Azure Functions|[cloud-games-fase-3-audit](https://github.com/reneesalles/cloud-games-fase-3-audit)|Gerenciamento de auditoria, registro de eventos e atividades do sistema para monitoramento e análise.|
 
 <h2>Documentos</h2>
 
