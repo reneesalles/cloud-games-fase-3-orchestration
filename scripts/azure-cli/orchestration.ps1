@@ -224,3 +224,17 @@ az keyvault secret set --vault-name $kvName -n "SqlCatalogsConnection" --value "
 az keyvault secret set --vault-name $kvName -n "SqlPaymentsConnection" --value "$sqlBaseConn Initial Catalog=tc-fase-3-payments-db;"
 
 Write-Output "Infraestrutura provisionada e segredos guardados no Key Vault: $kvName"
+
+# ---------------------------------------------------------------------
+# 6. Outras variáveis de ambiente
+# ---------------------------------------------------------------------
+Write-Output "Salvando variáveis JWT no Key Vault"
+az keyvault secret set --vault-name $kvName -n "Jwt--Secret" --value "$jwtSecret"
+az keyvault secret set --vault-name $kvName -n "Jwt--Issuer" --value "$jwtIssuer"
+az keyvault secret set --vault-name $kvName -n "Jwt--ExpiryMinutes" --value "$jwtExpiryMinutes"
+az keyvault secret set --vault-name $kvName -n "Jwt--Audience" --value "$jwtAudience"
+
+Write-Output "Salvando variáveis de configuração do usuário admin no Key Vault"
+az keyvault secret set --vault-name $kvName -n "AdminUser--Name" --value "$adminUserName"
+az keyvault secret set --vault-name $kvName -n "AdminUser--Email" --value "$adminUserEmail"
+az keyvault secret set --vault-name $kvName -n "AdminUser--Password" --value "$adminUserPassword"
