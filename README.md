@@ -22,19 +22,15 @@ Como provedor de nuvem, utilizamos a Microsoft Azure, aproveitando serviços com
 
 <h2>Documentos</h2>
 
-- [Instruções TC Fase 3](./docs/TC-NETT-FASE-3.md)
-
-**Arquitetura Cloud**
-| Versão | Arquivo | Descrição |
-|---|---|---|
-| ✅ Implementada | [ARQUITETURA-CLOUD.current.drawio](./docs/ARQUITETURA-CLOUD.current.drawio) | Arquitetura real do projeto, conforme efetivamente provisionado na Azure. |
-| 💡 Idealizada | [ARQUITETURA-CLOUD.target.drawio](./docs/ARQUITETURA-CLOUD.target.drawio) | Arquitetura-alvo concebida no início do projeto, com recursos adicionais como VNet privada, AKS e observabilidade com Prometheus/Grafana/Loki que não chegaram a ser implementados. |
-
-**Eventos**
-| Versão | Arquivo | Descrição |
-|---|---|---|
-| ✅ Implementada | [EVENTOS.current.drawio](./docs/EVENTOS.current.drawio) | Mapeamento real dos eventos publicados e consumidos entre os serviços. |
-| 💡 Idealizada | [EVENTOS.target.drawio](./docs/EVENTOS.target.drawio) | Mapeamento de eventos concebido no início do projeto, podendo conter fluxos e eventos que não chegaram a ser implementados. |
+- [Instruções TC Fase 3](./docs/TC-NETT-FASE-3.md): documento oficial do desafio, contendo os requisitos e critérios de avaliação.
+- [ARQUITETURA-CLOUD.current.drawio](./docs/ARQUITETURA-CLOUD.current.drawio): diagrama da arquitetura real do projeto, conforme efetivamente provisionado na Azure.
+    <img src="./docs/ARQUITETURA-CLOUD.current.svg" alt="Arquitetura Cloud — Implementada" style="background-color: white; padding: 5px;">
+- [ARQUITETURA-CLOUD.target.drawio](./docs/ARQUITETURA-CLOUD.target.drawio): diagrama da arquitetura idealizada no início do projeto, contendo recursos que não chegaram a ser implementados.
+    <img src="./docs/ARQUITETURA-CLOUD.target.svg" alt="Arquitetura Cloud — Idealizada" style="background-color: white; padding: 5px;">
+- [EVENTOS.current.drawio](./docs/EVENTOS.current.drawio): diagrama do mapeamento real dos eventos publicados e consumidos entre os serviços.
+    <img src="./docs/EVENTOS.current.svg" alt="Eventos — Implementados" style="background-color: white; padding: 5px;">
+- [EVENTOS.target.drawio](./docs/EVENTOS.target.drawio): diagrama do mapeamento idealizado dos eventos, contendo fluxos e eventos que não chegaram a ser implementados.
+    <img src="./docs/EVENTOS.target.svg" alt="Eventos — Idealizados" style="background-color: white; padding: 5px;">
 
 ---
 
