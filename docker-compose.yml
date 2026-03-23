@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # -----------------------------------------------------------
+  # API GATEWAY (A Porta de Entrada)
+  # -----------------------------------------------------------
+  apisix:
+    image: acrfcgtc3mrasv5dev.azurecr.io/fcg-api-gateway:latest
+    container_name: fcg-api-gateway
+    restart: always
+    ports:
+      - "80:9080" # O Azure expõe a porta 80 por padrão, mapeamos para a 9080 interna do APISIX
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - PAYMENTS_FUNCTION_KEY=${PAYMENTS_FUNCTION_KEY}
+      - DOCS_USERNAME=${DOCS_USERNAME}
+      - DOCS_PASSWORD=${DOCS_PASSWORD}
+      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
+      - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET}
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID}
+    depends_on:
+      - api-users
+      - api-catalogs
+    networks:
+      - fcg-network
+
+  # -----------------------------------------------------------
+  # APIs (MICROSSERVIÇOS)
+  # -----------------------------------------------------------
+  api-users:
+    build:
+      context: ../cloud-games-fase-3-users
+      dockerfile: Dockerfile
+    image: acrfcgtc3mrasv5dev.azurecr.io/fcg-api-users:latest
+    container_name: fcg-api-users
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - KEY_VAULT_URL=${KEY_VAULT_URL}
+      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
+      - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET}
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID}
+    networks:
+      - fcg-network
+
+  api-catalogs:
+    build:
+      context: ../cloud-games-fase-3-catalog
+      dockerfile: Dockerfile
+    image: acrfcgtc3mrasv5dev.azurecr.io/fcg-api-catalogs:latest
+    container_name: fcg-api-catalogs
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - KEY_VAULT_URL=${KEY_VAULT_URL}
+      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
+      - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET}
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID}
+    networks:
+      - fcg-network
+
+networks:
+  fcg-network:
+    driver: bridge

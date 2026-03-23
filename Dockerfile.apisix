@@ -1,0 +1,5 @@
+FROM apache/apisix:3.9.0-debian
+
+# Copia os seus arquivos de configuração para dentro da imagem oficial
+COPY ./apisix_conf/config.yaml /usr/local/apisix/conf/config.yaml
+COPY ./apisix_conf/apisix.yaml /usr/local/apisix/conf/apisix.yaml

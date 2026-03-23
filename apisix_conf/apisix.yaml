@@ -1,0 +1,89 @@
+routes:
+  # Rota Restrita: Documentação da API de Users
+  - id: "users-docs-route"
+    uris: 
+      - "/api/users/openapi/*" # Protege o JSON
+      - "/api/users/scalar"    # Match exato da página (sem barra)
+      - "/api/users/scalar/*"  # Protege a UI do Scalar
+    priority: 10 # IMPORTANTE: Isso garante que o APISIX avalie essa regra ANTES da regra genérica abaixo
+    upstream:
+      type: roundrobin
+      scheme: http
+      pass_host: pass
+      nodes:
+        "api-users:8080": 1
+    plugins:
+      basic-auth: {} # Ativa o bloqueio
+
+  # Rota Pública: Users API (Ex: App Service ou Container App)
+  - id: "users-cloud-routes"
+    uris: 
+      - "/api/users"   # Match exato da raiz (sem barra)
+      - "/api/users/*" # Match para tudo que vem depois da raiz (ex: /api/users/5)
+    upstream:
+      type: roundrobin
+      scheme: http
+      pass_host: pass
+      nodes:
+        # Aqui usará o nome do serviço definido no docker-compose, que é resolvido pelo DNS interno do Docker
+        "api-users:8080": 1
+    plugins:
+      limit-req:
+        rate: 5
+        burst: 2
+        rejected_code: 429
+        key: "remote_addr"
+
+  # Rota Restrita: Documentação da API de Catalogs
+  - id: "catalogs-docs-route"
+    uris: 
+      - "/api/catalogs/openapi/*" # Protege o JSON
+      - "/api/catalogs/scalar"    # Match exato da página (sem barra)
+      - "/api/catalogs/scalar/*"  # Protege a UI do Scalar
+    priority: 10 # IMPORTANTE: Isso garante que o APISIX avalie essa regra ANTES da regra genérica abaixo
+    upstream:
+      type: roundrobin
+      scheme: http
+      pass_host: pass
+      nodes:
+        "api-catalogs:8080": 1
+    plugins:
+      basic-auth: {} # Ativa o bloqueio
+
+  # Rota Protegida: Catalogs API
+  - id: "catalogs-cloud-routes"
+    uris: 
+      - "/api/catalogs"   # Match exato da raiz (sem barra)
+      - "/api/catalogs/*" # Match para tudo que vem depois da raiz (ex: /api/catalogs/5)
+    upstream:
+      type: roundrobin
+      scheme: http
+      pass_host: pass
+      nodes:
+        "api-catalogs:8080": 1
+    plugins:
+      # jwt-auth: {} 
+      limit-req:
+        rate: 20
+        burst: 10
+        rejected_code: 429
+        key: "remote_addr"
+
+# Configuração do Consumidor para o JWT
+consumers:
+  # Consumidor para acessar os endpoints protegidos das APIs (JWT Auth)
+  - username: "fcg_internal_auth"
+    plugins:
+      jwt-auth:
+        # A chave secreta real do seu Key Vault (diferentemente do docker-compose, precisa usar 2 chaves para acessar a variável de ambiente no APISIX)
+        key: "fcg-key"
+        secret: "${{JWT_SECRET}}"
+
+  # Consumidor para acessar as rotas de documentação (Basic Auth)
+  - username: "admin_docs_user"
+    plugins:
+      basic-auth:
+        username: "${{DOCS_USERNAME}}" # Use variáveis de ambiente para não hardcodar credenciais
+        password: "${{DOCS_PASSWORD}}"
+
+#END

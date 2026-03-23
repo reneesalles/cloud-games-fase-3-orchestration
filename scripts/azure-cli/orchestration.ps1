@@ -1,3 +1,6 @@
+$ErrorActionPreference = "Stop"
+$PSNativeCommandUseErrorActionPreference = $true
+
 # ---------------------------------------------------------------------
 # Variáveis Globais (Carregadas dinamicamente do .env)
 # ---------------------------------------------------------------------
@@ -27,14 +30,22 @@ if (Test-Path $envFilePath) {
 # ---------------------------------------------------------------------
 # Variáveis Globais (Selecione este bloco e rode no terminal primeiro)
 # ---------------------------------------------------------------------
+# Nome do Resource Group (ex: rg-tc3-nett-v1-dev)
 $rg="rg-$suffix-$env"
+
+# Nome do Key Vault (ex: kv-tc3-nett-v1-dev)
 $kvName="kv-$suffix-$env"
-$sbName="sb-$suffix-$env"
-$cosmosName="cosmos-$suffix-$env"
-$sqlServerName="sql-$suffix-$env"
+# URI do Key Vault, para facilitar a configuração das variáveis de ambiente no App Service e Functions (ex: https://kv-tc3-nett-v1-dev.vault.azure.net/)
+$kvUri = "https://$kvName.vault.azure.net/"
+
+# Nome do Application Insights (ex: appi-tc3-nett-v1-dev)
 $appInsightsName="appi-$suffix-$env"
+# Nome do Log Analytics Workspace (ex: log-tc3-nett-v1-dev)
 $workspaceName="log-$suffix-$env"
-$cosmosName="cosmos-$suffix-$env"
+
+# Nome do namespace do Service Bus (ex: sb-tc3-nett-v1-dev)
+$sbName="sb-$suffix-$env"
+# Definição da topologia de tópicos, assinaturas e filtros do Service Bus. A chave é o nome do tópico, o valor é um dicionário onde a chave é o nome da assinatura e o valor é uma lista dos eventos que aquela assinatura deve receber (use "*" para curinga, ou seja, receber todos os eventos daquele tópico)
 $serviceBusTopology = @{
     "integration-events" = @{
         "audit-log-subscription" = @("*")
@@ -67,6 +78,27 @@ $serviceBusTopology = @{
     }
 }
 
+# Nome da conta do Cosmos DB (ex: cosmos-tc3-nett-v1-dev)
+$cosmosName="cosmos-$suffix-$env"
+
+# Nome do servidor SQL (ex: sql-tc3-nett-v1-dev)
+$sqlServerName="sql-$suffix-$env"
+
+# Nome do Azure Container Registry (ex: acrfcgtc3nettv1dev)
+$acrName = "acrfcg$suffixTrimmed$env" # ACR não aceita hífens
+
+# Nome do App Service Plan (ex: plan-tc3-nett-v1-dev)
+$appPlanName = "plan-$suffix-$env"
+# Nome público da sua API (ex: app-fcg-gateway-tc3-nett-v1-dev)
+$webAppName = "app-fcg-gateway-$suffix-$env"
+
+# Nome da Function App para Audits (ex: func-audits-tc3-nett-v1-dev)
+$funcAuditsName = "func-audits-$suffix-$env"
+# Nome da Function App para Notifications (ex: func-notifications-tc3-nett-v1-dev)
+$funcNotificationsName = "func-notifications-$suffix-$env"
+# Nome da Function App para Payments (ex: func-payments-tc3-nett-v1-dev)
+$funcPaymentsName = "func-payments-$suffix-$env"
+
 # ---------------------------------------------------------------------
 # 0. Registrar os namespaces necessários (às vezes dá erro de "Resource provider not found" se não tiver)
 # ---------------------------------------------------------------------
@@ -82,6 +114,12 @@ az provider register --namespace Microsoft.AlertsManagement
 
 # Garante que o namespace do Cosmos DB está registrado
 az provider register --namespace Microsoft.DocumentDB
+
+# Garante que o namespace do Container Registry está registrado
+az provider register --namespace Microsoft.ContainerRegistry
+
+# Pausa para garantir que os namespaces foram registrados antes de criar os recursos
+Start-Sleep -Seconds 120
 
 Write-Output "Iniciando provisionamento da infraestrutura para o ambiente: $env"
 
@@ -238,3 +276,132 @@ Write-Output "Salvando variáveis de configuração do usuário admin no Key Vau
 az keyvault secret set --vault-name $kvName -n "AdminUser--Name" --value "$adminUserName"
 az keyvault secret set --vault-name $kvName -n "AdminUser--Email" --value "$adminUserEmail"
 az keyvault secret set --vault-name $kvName -n "AdminUser--Password" --value "$adminUserPassword"
+
+# ---------------------------------------------------------------------
+# 7. Azure Container Registry (ACR)
+# ---------------------------------------------------------------------
+Write-Output "Criando Azure Container Registry (ACR): $acrName"
+# Criamos SEM o admin-enabled. Acesso será estritamente via Identidade Gerenciada.
+az acr create -g $rg -n $acrName --sku Basic
+$acrId = az acr show -n $acrName -g $rg --query id -o tsv
+
+# ---------------------------------------------------------------------
+# 8. Hospedagem (App Service Multi-container) e Identidade
+# ---------------------------------------------------------------------
+Write-Output "Criando App Service Plan (Plano Linux): $appPlanName"
+az appservice plan create -g $rg -n $appPlanName --is-linux --sku B2 --location $appServiceLocation
+
+Write-Output "Criando Web App for Containers: $webAppName"
+# Criamos o Web App apontando para uma imagem genérica por enquanto. 
+# A sua pipeline de CI/CD fará o deploy real do docker-compose.yml depois!
+az webapp create -g $rg -p $appPlanName -n $webAppName -i "mcr.microsoft.com/azuredocs/aci-helloworld"
+
+Write-Output "Habilitando CI/CD para o Web App (para facilitar o deploy do docker-compose.yml via az CLI ou Azure DevOps)"
+$cicdUrl = az webapp deployment container config -g $rg -n $webAppName --enable-cd true --query CI_CD_URL -o tsv
+az acr webhook create --name "hookAppServiceToACR" --registry $acrName --resource-group $rg --actions push --uri $cicdUrl
+
+Write-Output "Habilitando Managed Identity no Web App (Apenas para ACR Pull)..."
+$webAppPrincipalId = az webapp identity assign -g $rg -n $webAppName --query principalId -o tsv
+
+# Dá a permissão de "AcrPull" para a identidade gerenciar o pull de imagens
+az role assignment create --role "AcrPull" --assignee-object-id $webAppPrincipalId --assignee-principal-type ServicePrincipal --scope $acrId
+
+Write-Output "Criando Service Principal exclusivo para o runtime da API acessar o Key Vault..."
+$spAppRuntimeName = "sp-webapp-runtime-$suffix-$env"
+# Cria o SPN e captura a saída em formato JSON
+$spAppRuntimeJson = az ad sp create-for-rbac --name $spAppRuntimeName --json-auth | ConvertFrom-Json
+
+$appClientId = $spAppRuntimeJson.clientId
+$appClientSecret = $spAppRuntimeJson.clientSecret
+$appTenantId = $spAppRuntimeJson.tenantId
+
+$appObjectId = az ad sp show --id $appClientId --query id -o tsv
+
+Write-Output "Concedendo permissão (Key Vault Secrets User) para o Service Principal da API..."
+az role assignment create --role "Key Vault Secrets User" --assignee-object-id $appObjectId --assignee-principal-type ServicePrincipal --scope $kvResourceId
+
+Write-Host "Aguardando 60 segundos para o Azure propagar a permissão da Identidade..."
+Start-Sleep -Seconds 60
+
+Write-Output "Configurando o Web App para usar a Identidade Gerenciada ao puxar as imagens do ACR..."
+az webapp config set -g $rg -n $webAppName --generic-configurations '{\"acrUseManagedIdentityCreds\": true}'
+
+Write-Output "Configurando App Settings (Variáveis de Ambiente) no Web App..."
+# Aqui é onde a mágica acontece! Estas variáveis vão substituir os ${VARIAVEL} no seu docker-compose.yml
+az webapp config appsettings set -g $rg -n $webAppName --settings `
+    AZURE_CLIENT_ID=$appClientId `
+    AZURE_CLIENT_SECRET=$appClientSecret `
+    AZURE_TENANT_ID=$appTenantId `
+    ACR_NAME=$acrName `
+    KEY_VAULT_URL=$kvUri `
+    APP_INSIGHTS_CONNECTION=$appInsightsKey `
+    JWT_SECRET=$jwtSecret `
+    DOCS_USERNAME=$docsUsername `
+    DOCS_PASSWORD=$docsPassword `
+    PAYMENTS_FUNCTION_KEY="aguardando-function" `
+    WEBSITES_ENABLE_APP_SERVICE_STORAGE=false `
+    DOCKER_REGISTRY_SERVER_URL="https://$acrName.azurecr.io"
+
+# Habilita o log de contêiner para facilitar o debug inicial (você pode acessar os logs pelo Azure Portal ou usando az webapp log tail)
+az webapp log config -g $rg -n $webAppName --docker-container-logging filesystem
+
+Write-Output "------------------------------------------------------"
+Write-Output "🚀 INFRAESTRUTURA FINALIZADA COM SUCESSO!"
+Write-Output "👉 O seu Gateway responderá em: https://$webAppName.azurewebsites.net"
+Write-Output "------------------------------------------------------"
+
+# ---------------------------------------------------------------------
+# 9. Azure Functions e Identidade
+# ---------------------------------------------------------------------
+Write-Output "Criando Function App (Audit) com imagem pública dummy..."
+az functionapp create --name $funcAuditsName --storage-account $storageName --resource-group $rg --plan $appPlanName --functions-version 4 --os-type Linux --image "mcr.microsoft.com/azure-functions/dotnet-isolated:4-dotnet-isolated10.0"
+
+Write-Output "Criando Function App (Notifications) com imagem pública dummy..."
+az functionapp create --name $funcNotificationsName --storage-account $storageName --resource-group $rg --plan $appPlanName --functions-version 4 --os-type Linux --image "mcr.microsoft.com/azure-functions/dotnet-isolated:4-dotnet-isolated10.0"
+
+Write-Output "Criando Function App (Payments) com imagem pública dummy..."
+az functionapp create --name $funcPaymentsName --storage-account $storageName --resource-group $rg --plan $appPlanName --functions-version 4 --os-type Linux --image "mcr.microsoft.com/azure-functions/dotnet-isolated:4-dotnet-isolated10.0"
+
+Write-Output "Habilitando Identidade Gerenciada nas Functions..."
+$auditPrincipalId = az functionapp identity assign -g $rg -n $funcAuditsName --query principalId -o tsv
+$notifPrincipalId = az functionapp identity assign -g $rg -n $funcNotificationsName --query principalId -o tsv
+$paymentPrincipalId = az functionapp identity assign -g $rg -n $funcPaymentsName --query principalId -o tsv
+
+Write-Output "Concedendo permissão (AcrPull) para as Functions puxarem imagens do ACR..."
+az role assignment create --role "AcrPull" --assignee-object-id $auditPrincipalId --assignee-principal-type ServicePrincipal --scope $acrId
+az role assignment create --role "AcrPull" --assignee-object-id $notifPrincipalId --assignee-principal-type ServicePrincipal --scope $acrId
+az role assignment create --role "AcrPull" --assignee-object-id $paymentPrincipalId --assignee-principal-type ServicePrincipal --scope $acrId
+
+Write-Output "Concedendo permissão (Key Vault Secrets User) para as Functions lerem os segredos..."
+az role assignment create --role "Key Vault Secrets User" --assignee-object-id $auditPrincipalId --assignee-principal-type ServicePrincipal --scope $kvResourceId
+az role assignment create --role "Key Vault Secrets User" --assignee-object-id $notifPrincipalId --assignee-principal-type ServicePrincipal --scope $kvResourceId
+az role assignment create --role "Key Vault Secrets User" --assignee-object-id $paymentPrincipalId --assignee-principal-type ServicePrincipal --scope $kvResourceId
+
+Write-Output "Configurando variáveis de ambiente nas Functions..."
+az functionapp config appsettings set -g $rg -n $funcAuditsName --settings KEY_VAULT_URI=$kvUri
+az functionapp config appsettings set -g $rg -n $funcNotificationsName --settings KEY_VAULT_URI=$kvUri
+az functionapp config appsettings set -g $rg -n $funcPaymentsName --settings KEY_VAULT_URI=$kvUri
+
+# ---------------------------------------------------------------------
+# 10. Criar Service Principal para CI/CD (GitHub Actions)
+# ---------------------------------------------------------------------
+Write-Output "Criando Service Principal (Crachá) para o GitHub Actions..."
+
+$spGithubName = "sp-github-actions-$suffix-$env"
+# Pega o ID da sua assinatura atual automaticamente
+$subId = az account show --query id -o tsv
+
+# Cria o SPN e guarda o JSON do output na variável
+$spGithubJson = az ad sp create-for-rbac --name $spGithubName --role contributor --scopes /subscriptions/$subId/resourceGroups/$rg --json-auth
+
+# Exibe na tela com um alerta gigante
+Write-Output "=================================================================="
+Write-Output "⚠️ ATENÇÃO: COPIE O JSON ABAIXO PARA O GITHUB SECRETS ⚠️"
+Write-Output "Ele NUNCA MAIS será exibido pelo Azure!"
+Write-Output "=================================================================="
+Write-Output $spGithubJson
+Write-Output "=================================================================="
+
+# Bônus: Salva em um arquivo local na sua máquina para não perder (adicione este arquivo no seu .gitignore!)
+$spGithubJson | Out-File -FilePath "github-credentials.json" -Encoding utf8
+Write-Output "O JSON também foi salvo no arquivo 'github-credentials.json' na pasta atual."

@@ -1,0 +1,11 @@
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+
+nginx_config:
+  envs:
+    - JWT_SECRET
+    - PAYMENTS_FUNCTION_KEY
+    - DOCS_USERNAME
+    - DOCS_PASSWORD

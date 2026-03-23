@@ -480,3 +480,6 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Credentials file for GitHub CI/CD with Azure (generated when running `scripts/azure-cli/orchestration.ps1`)
+github-credentials.json
