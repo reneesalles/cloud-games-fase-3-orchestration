@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="cloud-games-architecture" name="Arquitetura Cloud Games - Fase 3">
-        <mxGraphModel dx="2946" dy="779" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1920" pageHeight="1080" background="#ffffff" math="0" shadow="0">
+        <mxGraphModel dx="3490" dy="938" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1920" pageHeight="1080" background="#ffffff" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -232,6 +232,24 @@
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="571" y="1008.5" as="sourcePoint"/>
                         <mxPoint x="681" y="895.5" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="94" value="scripts\azure-cli\update-apisix-docker.ps1" style="sketch=0;aspect=fixed;pointerEvents=1;shadow=0;dashed=0;html=1;strokeColor=none;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;align=center;fillColor=#00188D;shape=mxgraph.azure.script_file" vertex="1" parent="1">
+                    <mxGeometry x="488.21999999999997" y="690" width="71.44" height="76" as="geometry"/>
+                </mxCell>
+                <mxCell id="95" style="html=1;endArrow=classic;endFill=1;dashed=1;dashPattern=1 4;strokeColor=#000000;strokeWidth=2;" edge="1" parent="1" source="94" target="3">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="573" y="858" as="sourcePoint"/>
+                        <mxPoint x="730" y="860" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="96" value="scripts\azure-cli\deploy-container.ps1" style="sketch=0;aspect=fixed;pointerEvents=1;shadow=0;dashed=0;html=1;strokeColor=none;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;align=center;fillColor=#00188D;shape=mxgraph.azure.script_file" vertex="1" parent="1">
+                    <mxGeometry x="489.99999999999994" y="960" width="71.44" height="76" as="geometry"/>
+                </mxCell>
+                <mxCell id="97" style="html=1;endArrow=classic;endFill=1;dashed=1;dashPattern=1 4;strokeColor=#000000;strokeWidth=2;" edge="1" parent="1" source="96" target="80">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="570" y="757" as="sourcePoint"/>
+                        <mxPoint x="730" y="842" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
             </root>
