@@ -377,10 +377,23 @@ az role assignment create --role "Key Vault Secrets User" --assignee-object-id $
 az role assignment create --role "Key Vault Secrets User" --assignee-object-id $notifPrincipalId --assignee-principal-type ServicePrincipal --scope $kvResourceId
 az role assignment create --role "Key Vault Secrets User" --assignee-object-id $paymentPrincipalId --assignee-principal-type ServicePrincipal --scope $kvResourceId
 
+Write-Output "Aguardando 60 segundos para o Azure propagar as permissões das Identidades Gerenciadas..."
+Start-Sleep -Seconds 60
+
+Write-Output "Configurando as Functions para usar a Identidade Gerenciada ao puxar as imagens do ACR..."
+az functionapp config set -g $rg -n $funcAuditsName --generic-configurations '{\"acrUseManagedIdentityCreds\": true}'
+az functionapp config set -g $rg -n $funcNotificationsName --generic-configurations '{\"acrUseManagedIdentityCreds\": true}'
+az functionapp config set -g $rg -n $funcPaymentsName --generic-configurations '{\"acrUseManagedIdentityCreds\": true}'
+
 Write-Output "Configurando variáveis de ambiente nas Functions..."
 az functionapp config appsettings set -g $rg -n $funcAuditsName --settings KEY_VAULT_URI=$kvUri
 az functionapp config appsettings set -g $rg -n $funcNotificationsName --settings KEY_VAULT_URI=$kvUri
 az functionapp config appsettings set -g $rg -n $funcPaymentsName --settings KEY_VAULT_URI=$kvUri
+
+Write-Output "Configurando Connection String do Service Bus nas Functions usando referência ao Key Vault..."
+az functionapp config appsettings set -g $rg -n $funcAuditsName --settings `""ServiceBusConnection=@Microsoft.KeyVault(VaultName=$kvName;SecretName=ServiceBusConnection)"`"
+az functionapp config appsettings set -g $rg -n $funcNotificationsName --settings `""ServiceBusConnection=@Microsoft.KeyVault(VaultName=$kvName;SecretName=ServiceBusConnection)"`"
+az functionapp config appsettings set -g $rg -n $funcPaymentsName --settings `""ServiceBusConnection=@Microsoft.KeyVault(VaultName=$kvName;SecretName=ServiceBusConnection)"`"
 
 # ---------------------------------------------------------------------
 # 10. Criar Service Principal para CI/CD (GitHub Actions)
