@@ -20,9 +20,11 @@ Como provedor de nuvem, utilizamos a Microsoft Azure, aproveitando serviços com
 
 ---
 
-<h2>Documentos</h2>
+<h2>Documentos e Links</h2>
 
-- [Instruções TC Fase 3](./docs/TC-NETT-FASE-3.md): documento oficial do desafio, contendo os requisitos e critérios de avaliação.
+- [Repositório da Fase 1](https://github.com/FIAP-10NETT-Grupo-30/cloud-games): repositório do projeto da Fase 1, contendo a implementação inicial do sistema FIAP Cloud Games, usando DDD, Event Storming e Clean Architecture, mas ainda como Monolito rodando localmente.
+- [Repositório da Fase 2 - Orchestration](https://github.com/FIAP-10NETT-Grupo-30/cloud-games-fase-2-orchestration): repositório do projeto da Fase 2, contendo a evolução do sistema para microsserviços rodando localmente via Docker Compose e Kubernetes, Mensageria com RabbitMQ, e uma arquitetura mais orientada a eventos, mas ainda sem implantação na nuvem.
+- [Instruções TC Fase 3](./docs/TC-NETT-FASE-3.md): documento oficial do desafio para a Fase 3, contendo os requisitos e critérios de avaliação.
 - [ARQUITETURA-CLOUD.current.drawio](./docs/ARQUITETURA-CLOUD.current.drawio): diagrama da arquitetura real do projeto, conforme efetivamente provisionado na Azure.
     <img src="./docs/ARQUITETURA-CLOUD.current.svg" alt="Arquitetura Cloud — Implementada">
 - [ARQUITETURA-CLOUD.target.drawio](./docs/ARQUITETURA-CLOUD.target.drawio): diagrama da arquitetura idealizada no início do projeto, contendo recursos que não chegaram a ser implementados.
