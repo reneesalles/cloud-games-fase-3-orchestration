@@ -63,13 +63,11 @@ try {
     if ($addFunction) {
         # 6.2 Presentation (Functions) amarra tudo: conhece App e Infra para configurar a Injeção de Dependência (DI) no Program.cs
         dotnet add src/Fiap.CloudGames.Functions reference src/Fiap.CloudGames.Application
-        dotnet add src/Fiap.CloudGames.Functions reference src/Fiap.CloudGames.Domain
         dotnet add src/Fiap.CloudGames.Functions reference src/Fiap.CloudGames.Infrastructure
     }
     if ($addAPI) {
         # 6.3 Presentation (API) amarra tudo: conhece App e Infra para configurar a Injeção de Dependência (DI) no Program.cs
         dotnet add src/Fiap.CloudGames.API reference src/Fiap.CloudGames.Application
-        dotnet add src/Fiap.CloudGames.API reference src/Fiap.CloudGames.Domain
         dotnet add src/Fiap.CloudGames.API reference src/Fiap.CloudGames.Infrastructure
     }
     
@@ -85,7 +83,6 @@ try {
     
     # 3. Adicionar as referências de arquitetura (Testes conhecem a Aplicação e o Domínio)
     dotnet add tests/Fiap.CloudGames.UnitTests reference src/Fiap.CloudGames.Application
-    dotnet add tests/Fiap.CloudGames.UnitTests reference src/Fiap.CloudGames.Domain
     
     # 4. Instalar o pacote do NSubstitute para a criação dos Mocks
     dotnet add tests/Fiap.CloudGames.UnitTests package NSubstitute
