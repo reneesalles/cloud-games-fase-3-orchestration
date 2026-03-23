@@ -24,13 +24,13 @@ Como provedor de nuvem, utilizamos a Microsoft Azure, aproveitando serviços com
 
 - [Instruções TC Fase 3](./docs/TC-NETT-FASE-3.md): documento oficial do desafio, contendo os requisitos e critérios de avaliação.
 - [ARQUITETURA-CLOUD.current.drawio](./docs/ARQUITETURA-CLOUD.current.drawio): diagrama da arquitetura real do projeto, conforme efetivamente provisionado na Azure.
-    <img src="./docs/ARQUITETURA-CLOUD.current.svg" alt="Arquitetura Cloud — Implementada" style="background-color: white; padding: 5px;">
+    <img src="./docs/ARQUITETURA-CLOUD.current.svg" alt="Arquitetura Cloud — Implementada">
 - [ARQUITETURA-CLOUD.target.drawio](./docs/ARQUITETURA-CLOUD.target.drawio): diagrama da arquitetura idealizada no início do projeto, contendo recursos que não chegaram a ser implementados.
-    <img src="./docs/ARQUITETURA-CLOUD.target.svg" alt="Arquitetura Cloud — Idealizada" style="background-color: white; padding: 5px;">
+    <img src="./docs/ARQUITETURA-CLOUD.target.svg" alt="Arquitetura Cloud — Idealizada">
 - [EVENTOS.current.drawio](./docs/EVENTOS.current.drawio): diagrama do mapeamento real dos eventos publicados e consumidos entre os serviços.
-    <img src="./docs/EVENTOS.current.svg" alt="Eventos — Implementados" style="background-color: white; padding: 5px;">
+    <img src="./docs/EVENTOS.current.svg" alt="Eventos — Implementados">
 - [EVENTOS.target.drawio](./docs/EVENTOS.target.drawio): diagrama do mapeamento idealizado dos eventos, contendo fluxos e eventos que não chegaram a ser implementados.
-    <img src="./docs/EVENTOS.target.svg" alt="Eventos — Idealizados" style="background-color: white; padding: 5px;">
+    <img src="./docs/EVENTOS.target.svg" alt="Eventos — Idealizados">
 
 ---
 
